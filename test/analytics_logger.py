@@ -7,18 +7,12 @@ from urllib import parse
 from mitmproxy.script import concurrent
 
 
-#
-# def start():
-#     return OmnitureLogger()
-#
-
 class AnalyticsLogger:
     """
     :Key_keys_to_remove store the keys, which are dynamic(may change with every call).
     """
-    keys_to_remove = ['.a', '.app', '.build', '.c', '.device', '.skymiles', 'a.', 'aamb', 'aamlh', 'app.', 'build.',
-                      'c.', 'ce', 'device.', 'manufacturermodel', 'mid', 'screendensity', 'screendimensions', 't',
-                      'vid']
+    keys_to_remove = []
+    url_matcher = r"google-analytics\.com\/.?\/?collect"
 
     @staticmethod
     def to_dict(input_list):
@@ -97,7 +91,7 @@ class AnalyticsLogger:
             yaml.dump(required_dict, file_to_write, default_flow_style=False, explicit_start=True)
 
 
-@concurrent
+# @concurrent
 def request(flow):
     """
     MITM's interface method, MITM passes every network call as flow object
@@ -108,14 +102,16 @@ def request(flow):
     #     raise ValueError("Usage: mitmdump -s 'analytics_logger.py collect/compare'")
     #
     # mode = sys.argv[1]
-
-    if 'deltaairlines.tt.omtrdc.net/m2/deltaairlines/mbox' in flow.request.url:
+    if re.search(r"google-analytics\.com\/.?\/?collect", flow.request.url):
         print("Host: " + flow.request.url + "\n\n")
         omniture_collect = AnalyticsLogger()
         dict_of_params = omniture_collect.create_dict_of_params(flow.request.query)
         required_dict = omniture_collect.sanitize_dictionary(dict_of_params)
+        name_dict = required_dict.copy()
         md5_hashsum = omniture_collect.generate_hash(required_dict.keys())
-        file_name = required_dict['profile.airportcode']
+        # import ipdb
+        # ipdb.set_trace(context=5)
+        file_name = '_'.join([name_dict[x] for x in ['dt','t']])
         filename_with_hash = omniture_collect.create_filename_with_hash(file_name, md5_hashsum)
         omniture_collect.save_to_yaml(filename_with_hash, required_dict)
 #

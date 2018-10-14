@@ -5,7 +5,5 @@ To run project
 virtualenv venv -p python3
 source venv/bin/activate
 pip install -r requierments.txt
-python test/test.py
+behave # to run bdd test
 ```
-
-this will create a yaml file in base_line
